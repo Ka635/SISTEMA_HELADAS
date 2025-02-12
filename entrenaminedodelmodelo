@@ -1,0 +1,58 @@
+import pandas as pd
+from sklearn.model_selection import train_test_split, cross_val_score
+from sklearn.tree import DecisionTreeClassifier, export_text
+import joblib
+import matplotlib.pyplot as plt
+
+# 1. Cargar los datos desde el archivo CSV
+file_path = r'C:\Users\Kate G\Downloads\TESIS\Datos\casosheladas.csv'  # Cambia esta ruta por la ubicación de tu archivo
+
+try:
+    # Leer el archivo con punto y coma como delimitador
+    data = pd.read_csv(file_path, delimiter=';', encoding='utf-8')
+    print("Datos cargados exitosamente:")
+    print(data.head())
+except FileNotFoundError:
+    print(f"Error: El archivo no fue encontrado en la ruta: {file_path}")
+    exit()
+except Exception as e:
+    print(f"Ocurrió un error al cargar el archivo: {e}")
+    exit()
+
+# 2. Separar características (X) y etiqueta (y)
+X = data[['estacion', 'horario', 'temperatura', 'humedad', 'viento', 'indice_UV']]
+y = data['helada']
+
+# 3. Dividir los datos en conjuntos de entrenamiento y prueba
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+
+# 4. Entrenar el Árbol de Decisión
+clf = DecisionTreeClassifier(criterion='entropy', max_depth=5, random_state=42)  # Puedes ajustar max_depth
+clf.fit(X_train, y_train)
+print("Entrenamiento del modelo completado.")
+
+# 5. Evaluar el modelo
+accuracy = clf.score(X_test, y_test)
+print(f"Precisión del modelo en datos de prueba: {accuracy * 100:.2f}%")
+
+# Validación cruzada
+scores = cross_val_score(clf, X, y, cv=5)
+print(f"Precisión media con validación cruzada: {scores.mean() * 100:.2f}%")
+
+# 6. Guardar el modelo
+joblib.dump(clf, 'arbol_heladas.pkl')
+print("Modelo guardado como 'arbol_heladas.pkl'.")
+
+# 7. Visualizar el Árbol de Decisión
+# Exportar las reglas del árbol
+tree_rules = export_text(clf, feature_names=['estacion', 'horario', 'temperatura', 'humedad', 'viento', 'indice_UV'])
+print("Reglas del Árbol de Decisión:")
+print(tree_rules)
+
+# Visualizar el árbol gráficamente
+from sklearn.tree import plot_tree
+
+plt.figure(figsize=(20, 10))
+plot_tree(clf, feature_names=['estacion', 'horario', 'temperatura', 'humedad', 'viento', 'indice_UV'], 
+          class_names=['No Helada', 'Helada'], filled=True, rounded=True)
+plt.show()
